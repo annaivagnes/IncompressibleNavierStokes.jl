@@ -24,7 +24,7 @@ function solve_unsteady(;
     psolver = default_psolver(setup),
     Δt = nothing,
     Δt_min = nothing,
-    cfl = eltype(ustart)(0.9),
+    cfl = eltype(ustart)(0.1),
     n_adapt_Δt = 1,
     docopy = true,
     processors = (;),

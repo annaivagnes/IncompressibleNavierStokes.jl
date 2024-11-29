@@ -3,9 +3,10 @@ create_stepper(::ExplicitRungeKuttaMethod; setup, psolver, u, temp, t, n = 0) =
 
 function timestep!(method::ExplicitRungeKuttaMethod, stepper, Δt; θ = nothing, cache)
     (; setup, psolver, u, temp, t, n) = stepper
-    (; closure_model, temperature) = setup
+    (; closure_model, filter_radius, relax_parameter,
+	 temperature) = setup
     (; A, b, c) = method
-    (; ustart, ku, p, tempstart, ktemp, diff) = cache
+    (; ustart, ku, p, tempstart, ktemp, diff, lu_filter_mats) = cache
     nstage = length(b)
     m = closure_model
 
@@ -51,6 +52,9 @@ function timestep!(method::ExplicitRungeKuttaMethod, stepper, Δt; θ = nothing,
 
     # This is redundant, but Neumann BC need to have _exact_ copies
     # since we divide by an infinitely thin (eps(T)) volume width in the
+	    # EFR step
+    isnothing(filter_radius) || differential_filter!(u, setup, filter_radius, relax_parameter, lu_filter_mats)
+
     # diffusion term
     apply_bc_u!(u, t, setup)
     isnothing(temp) || apply_bc_temp!(temp, t, setup)
@@ -60,7 +64,8 @@ end
 
 function timestep(method::ExplicitRungeKuttaMethod, stepper, Δt; θ = nothing)
     (; setup, psolver, u, temp, t, n) = stepper
-    (; closure_model, temperature) = setup
+    (; closure_model, filter_radius, relax_parameter,
+	 temperature) = setup
     (; A, b, c) = method
     nstage = length(b)
     m = closure_model
@@ -114,6 +119,8 @@ function timestep(method::ExplicitRungeKuttaMethod, stepper, Δt; θ = nothing)
     # since we divide by an infinitely thin (eps(T)) volume width in the
     # diffusion term
     u = apply_bc_u(u, t, setup)
+	lu_filter_mats = decompose_filter_mat(setup, filter_radius)
+	isnothing(filter_radius) || (u = differential_filter(u, setup,       filter_radius, relax_parameter, lu_filter_mats))
     isnothing(temp) || (temp = apply_bc_temp(temp, t, setup))
 
     create_stepper(method; setup, psolver, u, temp, t, n = n + 1)

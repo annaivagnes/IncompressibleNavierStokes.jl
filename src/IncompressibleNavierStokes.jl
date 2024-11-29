@@ -77,6 +77,7 @@ include("processors.jl")
 include("sciml.jl")
 include("solver.jl")
 include("utils.jl")
+include("efr.jl")
 
 # Time steppers
 include("time_steppers/methods.jl")
@@ -153,7 +154,8 @@ export apply_bc_u,
     total_kinetic_energy,
     vorticity,
     Dfield,
-    Qfield
+    Qfield,
+	differential_filter
 
 # Matrices
 export bc_u_mat,
